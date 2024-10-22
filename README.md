@@ -15,7 +15,7 @@ Built with React, TypeScript, and Material UI, form validation using `react-hook
 
 ## Features
 
-- Add and delete tasks.
+- Add, update and delete tasks.
 - Form validation using `react-hook-form` and `yup`.
 - Responsive design with Material UI.
 
