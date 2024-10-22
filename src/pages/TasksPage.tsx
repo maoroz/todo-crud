@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { DeleteIcon, NewTaskDialog, NewTaskFormData, PageSection } from "../components";
-import { Alert, Button, IconButton, LinearProgress, List, ListItem, ListItemText, Pagination, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Button, IconButton, LinearProgress, List, ListItem, ListItemButton, ListItemText, Pagination, Paper, Stack, Typography } from "@mui/material";
+import { UpdateTaskDialog, UpdateTaskFormData } from "../components/UpdateTaskDialog";
 
-interface Task {
+export interface Task {
   userId: number;
   id: number;
   title: string;
@@ -19,6 +20,8 @@ export const TasksPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [openNewTaskDialog, setOpenNewTaskDialog] = useState(false);
+  const [openUpdateTaskDialog, setOpenUpdateTaskDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const numberOfPages = useMemo(() => Math.ceil(tasks.length / itemsPerPage), [tasks]);
 
@@ -30,12 +33,21 @@ export const TasksPage = () => {
     setCurrentPage(page);
   }, []);
 
-  const handleDialog = useCallback(() => {
+  const handleNewTaskDialog = useCallback(() => {
     setOpenNewTaskDialog((prevState) => !prevState);
   }, []);
 
+  const handleCloseUpdateTaskDialog = useCallback(() => {
+    setSelectedTask(null);
+    setOpenUpdateTaskDialog(false);
+  }, []);
+
+  const handleOpenUpdateTaskDialog = useCallback((task: Task) => () => {
+    setSelectedTask(task);
+    setOpenUpdateTaskDialog(true);
+  }, []);
+
   const handleCreateNewTask = useCallback((formData: NewTaskFormData) => {
-    console.log(tasks.length);
     const newTask: Task = {
       userId: 1,
       id: tasks.length + 1,
@@ -44,8 +56,21 @@ export const TasksPage = () => {
       completed: false,
     };
     setTasks((prevState) => ([newTask, ...prevState]));
-    handleDialog();
-  }, [handleDialog, tasks.length]);
+    handleNewTaskDialog();
+  }, [handleNewTaskDialog, tasks.length]);
+
+  const handleUpdateNewTask = useCallback((id: number, formData: UpdateTaskFormData) => {
+    const currentTaskIndex = tasks.findIndex((t) => t.id === id);
+    const updatedTask = { ...tasks[currentTaskIndex], title: formData.name, description: formData.description };
+
+    const newTasks = [
+      ...tasks.slice(0, currentTaskIndex),
+      updatedTask,
+      ...tasks.slice(currentTaskIndex + 1),
+    ];
+    setTasks(newTasks);
+    handleCloseUpdateTaskDialog();
+  }, [handleCloseUpdateTaskDialog, tasks]);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -60,7 +85,7 @@ export const TasksPage = () => {
       setErrorMsg('Ha ocurrido un error al intentar obtener las tareas..');
       console.error(err);
     } finally {
-      setLoading(false); // Establecer estado de carga después de la llamada
+      setLoading(false);
     }
   }, []);
 
@@ -89,10 +114,12 @@ export const TasksPage = () => {
                     </IconButton>
                   }
                 >
-                  <ListItemText
-                    primary={<Typography fontWeight="bold" color="#333333">{task.title}</Typography>}
-                    secondary={task.description}
-                  />
+                  <ListItemButton onClick={handleOpenUpdateTaskDialog(task)} role={undefined} dense>
+                    <ListItemText
+                      primary={<Typography fontWeight="bold" color="#333333">{task.title}</Typography>}
+                      secondary={task.description}
+                    />
+                  </ListItemButton>
                 </ListItem>
               ))}
           </List>
@@ -106,12 +133,13 @@ export const TasksPage = () => {
             showFirstButton
             showLastButton
           />
-          <Button variant="contained" color="primary" fullWidth sx={{ maxWidth: '23.75rem' }} onClick={handleDialog}>
+          <Button variant="contained" color="primary" fullWidth sx={{ maxWidth: '23.75rem' }} onClick={handleNewTaskDialog}>
             Añadir tarea
           </Button>
         </Stack>
       )}
-      <NewTaskDialog open={openNewTaskDialog} onClose={handleDialog} onSave={handleCreateNewTask} />
+      <NewTaskDialog open={openNewTaskDialog} onClose={handleNewTaskDialog} onSave={handleCreateNewTask} />
+      {selectedTask && <UpdateTaskDialog open={openUpdateTaskDialog} onClose={handleCloseUpdateTaskDialog} onUpdate={handleUpdateNewTask} task={selectedTask} />}
     </PageSection >
   );
 }

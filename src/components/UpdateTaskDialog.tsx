@@ -7,37 +7,43 @@ import { FormField } from './FormField';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Task } from '../pages';
 
 const schema = yup.object().shape({
     name: yup.string().required('El nombre es requerido'),
     description: yup.string(),
   });
 
-export interface NewTaskFormData {
+export interface UpdateTaskFormData {
     name: string;
     description?: string;
 }
 
-interface NewTaskDialogProps {
+interface UpdateTaskDialogProps {
+    task: Task;
     open: boolean;
     onClose: () => void;
-    onSave: (formValues: NewTaskFormData) => void;
+    onUpdate: (id: number, formValues: UpdateTaskFormData) => void;
 }
 
-export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ onClose, open, onSave }) => {
+export const UpdateTaskDialog: React.FC<UpdateTaskDialogProps> = ({ task, onClose, open, onUpdate }) => {
     const {
         register,
         handleSubmit,
         formState: { errors },
         reset,
-    } = useForm<NewTaskFormData>({
+    } = useForm<UpdateTaskFormData>({
         resolver: yupResolver(schema),
+        defaultValues: {
+            name: task.title,
+            description: task.description,
+        }
     });
 
-    const onSubmit: SubmitHandler<NewTaskFormData> = useCallback((data) => {
-        onSave(data);
+    const onSubmit: SubmitHandler<UpdateTaskFormData> = useCallback((data) => {
+        onUpdate(task.id, data);
         reset();
-    }, [onSave, reset]);
+    }, [onUpdate, reset, task.id]);
 
     const handleOnClose = useCallback(() => {
         reset();
@@ -50,7 +56,7 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ onClose, open, onS
             open={open}
         >
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography fontWeight="bold" color="#333333">Añadir tarea</Typography>
+                <Typography fontWeight="bold" color="#333333">Actualizar tarea</Typography>
                 <IconButton onClick={handleOnClose}>
                     <CloseIcon />
                 </IconButton>
